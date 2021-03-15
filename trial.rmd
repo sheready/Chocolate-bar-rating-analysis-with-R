@@ -1,0 +1,146 @@
+
+#install tidyverse and Rcpp packages.Tidyverse is a collection of R #packages for data science.The packages include dplyr for data #manipulation,tidyr for data tidying,readr for data import,stringr for #stings,forcats for factors e.t.c.Rcpp provides R functions as well as #c++ classes therefore offers integration between R and c++.
+install.packages(c("Rcpp","tidyverse"))
+#if error occurs go to terminal and type
+#sudo apt-get install -y libxml2-dev libcurl4-openssl-dev libssl-dev
+
+#read the tidyverse package
+library(tidyverse)
+install.packages("conflicted")
+library(conflicted)
+library(dplyr)
+#read the csv file i.e comma separated values into R.
+chocolateData <-read_csv("/home/sheready/Downloads/flavors_of_cacao.csv")
+
+#Use head() to read the first few lines of a file
+head(chocolateData,7)
+
+#Use tail() to read the last 3 lines of a file
+tail(chocolateData,3)
+
+#recall a dataframe[row,column]
+#Get contents in the 6th row and 4th column
+chocolateData[6,4]
+
+#Get contents in the 6th row(comma is a must to display row)
+chocolateData[6,]
+
+#Get contents of the 6th column
+chocolateData[6]
+
+#Get first contents of the 6th column
+head(chocolateData[6])
+
+#removing unwanted data,we do this by adding a -ve sign infront of the #index you don't want.To get the rows exclusive of the first row
+chocolateData <-chocolateData[-1,]
+head(chocolateData)
+
+#get rid of white spaces in the column names to allow as to refer to the #columns by their names,since R is affected by whitespaces
+#Datacleaning ,ensuring that datatype in a column is of that #datatype.Lets use the str() to check our columns.
+#The first row shows the class of the object and its size,there is a #special type of data.frame #called a tibble,abbreviated to tbl.This tibble is #1795 rows long and 9 columns wide.$ the dollar #sign means that anything after it is a column in #a dataframe
+names(chocolateData) <- gsub("[[:space:]+]", "_", names(chocolateData))
+str(chocolateData)
+
+#read first few values of column named 'Rating' in #the dataframe 'chocolateData"
+head(chocolateData$Rating)
+
+# tidyverse has a lot of utility functions. One of #them is type_convert, which will look at the #first #1000 rows of each column, guess what the #data type of that column should be and then #convert that column into that data type
+
+chocolateData <- type_convert(chocolateData)
+
+#we can check again the datatypes using str()
+str(chocolateData)
+
+#the column "Cocoa Percent" is a character, not a #numeric value (which is what we'd usually want a #percent to be). This is probably because the data #in this column contains the percent symbol (%), #which isn't a number. Let's remove all the #percent symbols from this dataset & try again.
+#sapply() function takes list, vector or data frame as input and gives #output in vector or matrix
+#the gsub() is used to substitute the values with the input values
+
+chocolateData$Cocoa_Percent<-sapply(chocolateData$Cocoa_Percent, function(x) gsub("%", "", x))
+chocolateData <- type_convert(chocolateData)
+str(chocolateData)
+
+#summarizing data,learning about summary() 
+#function install dplyr and load it
+install.packages("dplyr")
+library(dplyr)
+?summary
+#learning about summarise_all() function
+?summarise_all
+summary(chocolateData)
+
+#need to load a package (like magrittr or dplyr) that #defines the function first.The pipe operator %>% was #introduced to "decrease development time and to improve #readability and maintainability of code."
+install.packages("magrittr")
+install.packages("dplyr")
+library(magrittr)
+library(dplyr)
+
+#to get mean
+chocolateData%>%summarise_all(mean)
+
+#to obtain mean from only values that are numeric
+chocolateData%>%summarise_if(is.numeric, mean)
+
+#return a data_frame with the mean and sd of the Rating #column, from the chocolateData
+chocolateData %>%
+    summarise(averageRating = mean(Rating),
+             sdRating = sd(Rating))
+
+#If you pipe a dataset into the group_by() function and give #it the name of a specific column,it will look at all the #values in that column and group together all the rows that #have the same value in a given column.If you pipe that data #into the summarise() function, it will return the values #you asked for for each group separately.
+
+chocolateData %>%
+    group_by(Review_Date) %>%
+    summarise(averageRating = mean(Rating),
+             sdRating = sd(Rating))
+
+#Graphing data,we're going to use a library called #"ggplot2", which is part of the tidyverse collection of #packages.The "gg" in "ggplot" stands for "the grammar of #graphics".
+#The first function, ggplot(), just draws the outline of #the plot, including the the axes and tick marks. It takes two arguments:
+#The dataset that you want to plot.
+#A function, aes(), short for aesthetic. This function #itself takes multiple arguments. Let's start by using x & #y, which will tell the function which columns of the #data_frame to plot on the x axis and y axis.
+
+#let's draw a blank plot with "Review_Date" as the x axis #and "Rating" as the y axis.Load up ggplot package.
+library(ggplot2)
+ggplot(chocolateData,aes(x= Review_Date,y = Rating))
+
+#Plots in ggplot2 are "built up" using multiple functions #connected with the plus sign (+).we need to add a geom #layer to our plot.There are lots of different geom layers #(you can see a full list of them #https://ggplot2.tidyverse.org/reference/section-layer-geoms)
+
+#Hint: Different geoms require different aesthetics. If #your code runs but doesn't return a plot, it's usually #because you've given ggplot() one set of aesthetics, but #the geom you're using need a different set. #geom_histogram(), for example, only needs to know what to #plot on the x axis. If you tell it to plot something on #the x axis and something else on the y axis, it won't #return the plot you're expecting.
+#lets us create a scatter plot
+#draw a plot with "Review_Date" as the x axis and "Rating" #as the y axis, and add a point for each data point
+
+ggplot(chocolateData, aes(x= Review_Date, y = Rating)) + geom_point()
+
+#a lot of our data points are being plotted on top of each #other. This makes our plot very difficult to read.To fix #this we can move each point just a little bit so we can #actually see how many of them there are. We can do this #using the geom "jitter", which we add by adding the layer #geom_jitter().
+
+ggplot(chocolateData, aes(x= Review_Date, y = Rating)) + geom_point() + geom_jitter()
+
+#from the data we can see that there seem to be more #reviews each year, and that they seem to be getting more #tightly clustered.
+#How do we know if reviews getting more positive over time.
+#One way to check this is to fit a linear model to this #data and see if it goes up or down over time.
+#Using ggplot2, this is very easy to do! We can add a layer #that will fit a linear model to this dataset and then plot #it.
+#draw a plot with "Review_Date" as the x axis and "Rating" #as the y axis, add a point for each data point, move each #point slightly so they don't overlap and add a smoothed #line (lm = linear model)
+
+ggplot(chocolateData, aes(x= Review_Date, y = Rating)) + 
+    geom_point() + 
+    geom_jitter() +
+    geom_smooth(method = 'lm')
+
+#You can keep adding additional information to #plots very easily by adding additional layers #and aesthetic mappings. For example, we might #want to see how the cocoa percentage of #chocolate bars change over time and how that #affects ratings. We can do this by adding #another argument to the aes() function, and #telling it to plot the column Cocoa_Percent to #color.How do we achieve this;
+
+# draw a plot with "Review_Date" as the x axis #and "Rating" as the y axis, add a point for each #data point, move each point slightly so they #don't overlap and add a smoothed line (lm = #linear model). Encode Cocoa_Percent as color.
+
+ggplot(chocolateData, aes(x= Review_Date, y = Rating, color = Cocoa_Percent)) + 
+    geom_point() + 
+    geom_jitter() +
+    geom_smooth(method = 'lm')
+#conclusion;chocolate bars with very high cocoa #percents tend to get lower ratings
+
+#how to plot these summarized datasets
+#Return the average and sd of ratings by the year a #rating was given
+averageRatingByYear<-chocolateData%>%
+    group_by(Review_Date)%>%
+    summarise(averageRating = mean(Rating))
+# plot only the average rating by year
+ggplot(averageRatingByYear, aes(y= averageRating, x = Review_Date )) + 
+    geom_point() + geom_line()
+
+
